@@ -2,34 +2,49 @@ version: '3.8'
 
 services:
   frontend:
-    build: ./frontend/public/
+    build: ./frontend/public
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+         condition: service_healthy
 
   backend:
-    build: ./backend/src/
+    build: ./backend/src
     environment:
       - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=root
+      - DB_USER=auth_user
+      - DB_PASSWORD=auth_password
       - DB_NAME=auth_db
+      - DB_PORT=3306
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "./backend/scr/healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: mysql:8.0
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=auth_db
+      - MYSQL_USER=auth_user
+      - MYSQL_PASSWORD=auth_password
     volumes:
       - db_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
 volumes:
   db_data:
