@@ -43,6 +43,14 @@ app.post('/login', async (req, res) => {
         res.status(500).send('Error logging in');
     }
 });
+app.get('/health', async (req, res) => {
+    try {
+        await db.query('SELECT 1');
+        res.status(200).send('OK');
+    } catch (error) {
+        res.status(500).send('Database connection failed');
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
